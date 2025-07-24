@@ -2,8 +2,12 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Put, HttpException, 
 import { DogsService } from './dogs.service';
 import { CreateDogDto } from './dto/create-dog.dto';
 import { UpdateDogDto } from './dto/update-dog.dto';
-import { ApiBody, ApiCreatedResponse, ApiExtension, ApiHeader, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiCreatedResponse, ApiExtension, ApiExtraModels, ApiHeader, ApiOkResponse, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { FindDogResponse } from './dto/find-dog.response';
+import { Dog } from './entities/dog.entity';
+import { PaginatedResponse } from '../common/dto/paginated.response';
+import { resourceLimits } from 'worker_threads';
+import { ApiPaginatedResponse } from '../common/decorator/swagger/apiPaginatedResponse';
 
 @Controller('dogs')
 export class DogsController {
@@ -18,12 +22,15 @@ export class DogsController {
  * @throws {400} Bad Request.
  */
   @ApiExtension('x-foo', { hello: 'world' })
+  @ApiPaginatedResponse(Dog)
   @Get()
-  findAll() : FindDogResponse {
+  findAll() : PaginatedResponse<Dog> {
     const data =  this.dogsService.findAll();
 
     return {
-      count : data.length,
+      total : data.length,
+      offset : 0,
+      limit : 0, 
       data,
     }
   }
