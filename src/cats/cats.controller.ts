@@ -15,9 +15,16 @@ import { Cat } from './entities/cat.entity';
 export class CatsController {
   constructor(private readonly catsService: CatsService) {}
 
+  /**
+ * Create a new cat
+ *
+ * @remarks This operation allows you to create a new cat.
+ *
+ * @deprecated
+ * @throws {500} Something went wrong.
+ * @throws {400} Bad Request.
+ */
   @Post()
-  @ApiOperation({ summary: 'Create cat' })
-  @ApiResponse({ status: 403, description: 'Forbidden.' })
   async create(@Body() createCatDto: CreateCatDto): Promise<Cat> {
     return this.catsService.create(createCatDto);
   }
