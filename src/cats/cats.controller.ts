@@ -20,7 +20,6 @@ export class CatsController {
  *
  * @remarks This operation allows you to create a new cat.
  *
- * @deprecated
  * @throws {500} Something went wrong.
  * @throws {400} Bad Request.
  */
