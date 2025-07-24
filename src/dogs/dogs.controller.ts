@@ -2,18 +2,22 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Put, HttpException, 
 import { DogsService } from './dogs.service';
 import { CreateDogDto } from './dto/create-dog.dto';
 import { UpdateDogDto } from './dto/update-dog.dto';
-import { ApiBody } from '@nestjs/swagger';
+import { ApiBody, ApiCreatedResponse, ApiExtension, ApiHeader, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FindDogResponse } from './dto/find-dog.response';
 
 @Controller('dogs')
 export class DogsController {
   constructor(private readonly dogsService: DogsService) {}
 
-  @Post()
-  create(@Body() createDogDto: CreateDogDto) {
-    return this.dogsService.create(createDogDto);
-  }
-
+  /**
+ * find all dog
+ *
+ * @remarks this operation find all dogs
+ *
+ * @throws {500} Something went wrong.
+ * @throws {400} Bad Request.
+ */
+  @ApiExtension('x-foo', { hello: 'world' })
   @Get()
   findAll() : FindDogResponse {
     const data =  this.dogsService.findAll();
@@ -27,6 +31,18 @@ export class DogsController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.dogsService.findOne(+id);
+  }
+
+  @ApiHeader({
+    name : 'X-custom',
+    description : 'Custom header'
+  })
+  @ApiTags('tag')
+  @ApiResponse({ status: HttpStatus.AMBIGUOUS, description : 'request is ambiguous'})
+  @ApiCreatedResponse({ description : 'create dog'})
+  @Post()
+  create(@Body() createDogDto: CreateDogDto) {
+    return this.dogsService.create(createDogDto);
   }
 
   @Put(':id')
