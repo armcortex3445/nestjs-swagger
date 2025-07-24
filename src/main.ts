@@ -23,6 +23,7 @@ function attachSwagger(app : INestApplication<any>){
   .setVersion('1.0')
   .addTag('cats')
   .addBearerAuth()
+  .addBasicAuth()
   .build();
 const document = SwaggerModule.createDocument(app, options);
 SwaggerModule.setup('api', app, document,{

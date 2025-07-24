@@ -2,13 +2,14 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Put, HttpException, 
 import { DogsService } from './dogs.service';
 import { CreateDogDto } from './dto/create-dog.dto';
 import { UpdateDogDto } from './dto/update-dog.dto';
-import { ApiBody, ApiCreatedResponse, ApiExtension, ApiExtraModels, ApiHeader, ApiOkResponse, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
+import { ApiBasicAuth, ApiBody, ApiCreatedResponse, ApiExtension, ApiExtraModels, ApiHeader, ApiOkResponse, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { FindDogResponse } from './dto/find-dog.response';
 import { Dog } from './entities/dog.entity';
 import { PaginatedResponse } from '../common/dto/paginated.response';
 import { resourceLimits } from 'worker_threads';
 import { ApiPaginatedResponse } from '../common/decorator/swagger/apiPaginatedResponse';
 
+@ApiBasicAuth()
 @Controller('dogs')
 export class DogsController {
   constructor(private readonly dogsService: DogsService) {}
