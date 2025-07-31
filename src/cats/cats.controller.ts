@@ -6,8 +6,9 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { CatsService } from './cats.service';
-import { CreateCatDto } from './dto/create-cat.dto';
+import { CreateCatDto } from './dto/request/create-cat.dto';
 import { Cat } from './entities/cat.entity';
+import { ShowCatResponse } from './dto/response/showCat.response';
 
 @ApiBearerAuth()
 @ApiTags('cats')
@@ -29,12 +30,10 @@ export class CatsController {
   }
 
   @Get(':id')
-  @ApiResponse({
-    status: 200,
-    description: 'The found record',
-    type: Cat,
-  })
-  findOne(@Param('id') id: string): Cat {
-    return this.catsService.findOne(+id);
+  findOne(@Param('id') id: string): ShowCatResponse {
+    const cat  =  this.catsService.findOne(+id);
+
+    return new ShowCatResponse(cat);
+
   }
 }
