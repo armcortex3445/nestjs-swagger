@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateHumanDto } from './dto/create-human.dto';
-import { UpdateHumanDto } from './dto/update-human.dto';
+import { CreateHumanDto } from './dto/request/create-human.dto';
+import { UpdateHumanDto } from './dto/request/update-human.dto';
 
 @Injectable()
 export class HumansService {

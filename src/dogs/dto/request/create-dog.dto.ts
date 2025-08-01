@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { DOG_BREED, DogBreedValue } from "../entities/dog.entity";
+import { DOG_BREED, DogBreedValue } from "../../entities/dog.entity";
 import { IsIn, IsNumber, IsString } from "class-validator";
 
 export class CreateDogDto {

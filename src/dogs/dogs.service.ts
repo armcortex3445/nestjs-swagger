@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateDogDto } from './dto/create-dog.dto';
-import { UpdateDogDto } from './dto/update-dog.dto';
+import { CreateDogDto } from './dto/request/create-dog.dto';
+import { UpdateDogDto } from './dto/request/update-dog.dto';
 import { Dog } from './entities/dog.entity';
 
 @Injectable()

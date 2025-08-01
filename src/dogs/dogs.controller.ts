@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Put, HttpException, HttpStatus } from '@nestjs/common';
 import { DogsService } from './dogs.service';
-import { CreateDogDto } from './dto/create-dog.dto';
-import { UpdateDogDto } from './dto/update-dog.dto';
+import { CreateDogDto } from './dto/request/create-dog.dto';
+import { UpdateDogDto } from './dto/request/update-dog.dto';
 import { ApiBasicAuth, ApiBody, ApiCreatedResponse, ApiExtension, ApiExtraModels, ApiHeader, ApiOkResponse, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
-import { FindDogResponse } from './dto/find-dog.response';
+import { FindDogResponse } from './dto/request/find-dog.response';
 import { Dog } from './entities/dog.entity';
 import { PaginatedResponse } from '../common/dto/paginated.response';
 import { resourceLimits } from 'worker_threads';

@@ -1,4 +1,4 @@
-import { Dog } from "../entities/dog.entity";
+import { Dog } from "../../entities/dog.entity";
 
 export class FindDogResponse{
 
