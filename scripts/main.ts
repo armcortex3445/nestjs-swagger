@@ -6,12 +6,13 @@ import { transformToInterface } from "./transformer";
 
 function main() {
 
+    const inputDir = "src";
     const outDir = "types";
-    const dtoGlob = ["src/**/*.response.ts" , "src/**/*dto.ts"];
+    const dtoGlob = ["*.response.ts" , "*.dto.ts"];
 
     //1. transform
     console.log(`Running transformer.`);
-    transformToInterface(dtoGlob,outDir);
+    transformToInterface(inputDir,dtoGlob,outDir);
 
     const args : string[] = [`types/**/*{.response.ts,.dto.ts}`];
     console.log(`Running typeMapper. ${args.join(" , ")}`);

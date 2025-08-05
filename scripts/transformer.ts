@@ -71,7 +71,7 @@ function getAncestorProperties(declaration : ClassDeclaration){
     return [...collectedProps.values()];
 }
 
-export function transformToInterface(globPattern : string[],outDir : string ){
+export function transformToInterface(inputDir : string, globPattern : string[],outDir : string ){
 
     const project = new Project({
         tsConfigFilePath : "tsconfig.json",
@@ -79,43 +79,49 @@ export function transformToInterface(globPattern : string[],outDir : string ){
         // skipFileDependencyResolution: true,
     });
 
-    const sourceFiles = project.getSourceFiles(globPattern);
+    const sourceFiles = project.getSourceFiles(globPattern.map(p=>`${inputDir}/**/${p}`));
      
     for( const file of sourceFiles){
         console.log(`#processing : ${file.getFilePath()}`);
 
-        const fileName = file.getFilePath().split('/').slice(-1)[0];
-
+        
         const classDeclaration = file.getClass(()=>true);
-
+        
         if (!classDeclaration) {
             console.warn(`⚠️ No matching class in file: ${file.getBaseName()}`);
             continue;
         }
-
-        const className = classDeclaration.getName();
-        const typeParams = classDeclaration.getTypeParameters();
-        const typeParamTexts = typeParams.map(tp => tp.getText()); // 예: ['T', 'U']
-        const genericSuffix = typeParamTexts.length > 0 ? `<${typeParamTexts.join(", ")}>` : "";
-
-
+        
         const properties : ASTProperty[] = getAllProperties(classDeclaration);
-
-        classDeclaration.getDecorators().forEach(d=>d.remove);
-        
-        const outputFilePath = `${outDir}/${fileName}`;
-        const interfaceFile = project.createSourceFile(outputFilePath,"",{overwrite : true});
-
-
-        interfaceFile.addInterface({
-            name : className,
-            isExported : true,
-            typeParameters: typeParamTexts,
-            properties : properties
-        });
-        
-        interfaceFile.saveSync();
-        console.log(`✅ Created interface: ${className}${genericSuffix} → ${outputFilePath}`);
-
+        const outputFilePath = `${outDir}/${getPathAfterDir(file.getFilePath(),inputDir)}`;
+        generateInterface(classDeclaration,properties,outputFilePath);
     }
 }
+
+function generateInterface(classDeclaration : ClassDeclaration, properties : ASTProperty[], outputFilePath : string){
+
+        
+    const className = classDeclaration.getName();
+    const typeParams = classDeclaration.getTypeParameters();
+    const typeParamTexts = typeParams.map(tp => tp.getText()); // 예: ['T', 'U']
+    const interfaceFile = classDeclaration.getProject().createSourceFile(outputFilePath,"",{overwrite : true});
+    
+    
+    const genericSuffix = typeParamTexts.length > 0 ? `<${typeParamTexts.join(", ")}>` : "";
+    interfaceFile.addInterface({
+        name : className,
+        isExported : true,
+        typeParameters: typeParamTexts,
+        properties : properties
+    });
+    
+    interfaceFile.saveSync();
+
+    console.log(`✅ Created interface: ${className}${genericSuffix} → ${outputFilePath}`);
+}
+
+function getPathAfterDir(fullPath: string, dirName: string): string | null {
+    const idx = fullPath.indexOf(`/${dirName}/`);
+    if (idx === -1) return null;
+    return fullPath.substring(idx + dirName.length + 1); // +1 for the extra slash
+  }
