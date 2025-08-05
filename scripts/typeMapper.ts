@@ -204,31 +204,47 @@ function findImportTypeReferences (file: SourceFile, filePath: string) {
 };
   
   // 수집된 import 정보를 바탕으로 파일 상단에 import 구문 추가
-  function addNamedImportsToFile(
+  function addImport(
     file: SourceFile,
-    importsToAdd: Record<string, Set<string>>,
-    existingImports: Map<string, Set<string>>
+    importMap: Record<string, string[]>,
   ) {
-    for (const [moduleSpecifier, typeNames] of Object.entries(importsToAdd)) {
-      const alreadyImported = existingImports.get(moduleSpecifier) || new Set();
-      const newImports = Array.from(typeNames).filter((name) => !alreadyImported.has(name));
-  
-      if (newImports.length > 0) {
+    for (const [moduleSpecifier, newImports] of Object.entries(importMap)) {
         file.addImportDeclaration({
           kind: StructureKind.ImportDeclaration,
           moduleSpecifier,
           namedImports: newImports,
         });
-      }
+      
     }
   };
+
+    // 수집된 import 정보를 바탕으로 파일 상단에 import 구문 추가
+    function getImportMap(
+      file: SourceFile,
+      filePath : string,
+    ) {
+      const importMap : Record<string, string[]> = {};
+      const existingImports = getExistingImports(file);
+      const importsToAdd = findImportTypeReferences(file, filePath);
+      for (const [moduleSpecifier, typeNames] of Object.entries(importsToAdd)) {
+        const alreadyImported = existingImports.get(moduleSpecifier) || new Set();
+        const newImports = Array.from(typeNames).filter((name) => !alreadyImported.has(name));
+    
+        if (newImports.length > 0) {
+            importMap[moduleSpecifier] = newImports;
+          
+        }
+      }
+
+      return importMap;
+    };
   
   // 하나의 파일에 대해 전체 동작 처리
 function processFile (project: Project, filePath: string) {
     const sourceFile = project.getSourceFileOrThrow(filePath);
-    const existingImports = getExistingImports(sourceFile);
-    const importsToAdd = findImportTypeReferences(sourceFile, filePath);
-    addNamedImportsToFile(sourceFile, importsToAdd, existingImports);
+    const importMap = getImportMap(sourceFile,filePath);
+    
+    addImport(sourceFile, importMap);
     simplifyImportTypesInInterface(sourceFile);
   };
   
