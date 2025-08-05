@@ -103,7 +103,13 @@ function recursivelySimplifyType(typeNode: TypeNode): void {
     return;
   }
 
+  if(Node.isTypeOperatorTypeNode(typeNode) && typeNode.getOperator() === SyntaxKind.KeyOfKeyword){
+    const type = typeNode.getTypeNode();
+    console.log(`[recursivelySimplifyType] keyof`);
 
+    recursivelySimplifyType(type);
+    return;
+  }
 
 
 }
