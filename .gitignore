@@ -19,3 +19,9 @@ npm-debug.log
 
 # dist
 /dist
+
+# class-transformer output
+/types
+
+# class-transformer logger
+scripts/**/*.txt
