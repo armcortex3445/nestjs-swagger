@@ -14,10 +14,9 @@ function main() {
     console.log(`Running transformer.`);
     transformToInterface(inputDir,dtoGlob,outDir);
 
-    const args : string[] = [`types/**/*{.response.ts,.dto.ts}`];
-    console.log(`Running typeMapper. ${args.join(" , ")}`);
+    console.log(`Running typeMapper.`);
 
-    processFiles(args[0])
+    processFiles(inputDir,dtoGlob,outDir)
     
 }
 

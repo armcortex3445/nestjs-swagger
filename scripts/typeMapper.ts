@@ -233,16 +233,17 @@ function processFile (project: Project, filePath: string) {
   };
   
   // 전체 glob 경로에 대해 처리
-export function processFiles (globPattern: string,) {
+export function processFiles (inputDir: string, globPattern : string[],outDir : string) {
     const project = new Project({
         tsConfigFilePath : 'tsconfig.json',
         skipAddingFilesFromTsConfig : true,
         skipFileDependencyResolution : true,
-    });
-    const filePaths = sync(globPattern, { absolute: true });
-  
-    project.addSourceFilesAtPaths(globPattern);
-    filePaths.forEach((filePath) => {
+    });  
+
+    const resultPaths = sync(globPattern.map(p=>`${outDir}/**/${p}`),{absolute : true});
+
+    project.addSourceFilesAtPaths(resultPaths);
+    resultPaths.forEach((filePath) => {
       try {
         processFile(project, filePath);
       } catch (err) {
