@@ -1,11 +1,10 @@
-import { get } from "http";
-import { ClassDeclaration, InterfaceDeclaration, Project , StructureKind, SyntaxKind, ts } from "ts-morph";
+import { ClassDeclaration, InterfaceDeclaration, MappedTypeNode, Project , SourceFile, StructureKind, SymbolFlags, SyntaxKind, ts } from "ts-morph";
 
 interface ASTProperty{
     name: string; type: string; hasQuestionToken: boolean
 }
 
-function extractProperties( declaration : ClassDeclaration ) : ASTProperty[]{
+function extractProperties(declaration : ClassDeclaration ) : ASTProperty[]{
 
 
     const collectedProps: Map<string, ASTProperty> = new Map();
@@ -16,13 +15,15 @@ function extractProperties( declaration : ClassDeclaration ) : ASTProperty[]{
     return [...collectedProps.values()];
 
     function getOwnProperties(){
-        const ownProps = declaration.getProperties();
-        ownProps.forEach(p => p.getDecorators().forEach(d => d.remove()));
+        const type = declaration.getType();
+        const ownProps = type.getProperties();
         ownProps.forEach(prop => {
+            const valueLoc = prop.getValueDeclaration();
+            if(!valueLoc) return;
             collectedProps.set(prop.getName(), {
                 name: prop.getName(),
-                type: prop.getType().getText(),
-                hasQuestionToken: prop.hasQuestionToken(),
+                type: prop.getTypeAtLocation(prop.getValueDeclarationOrThrow()).getText(),
+                hasQuestionToken: prop.hasFlags(SymbolFlags.Optional),
             });
         });
     }
@@ -35,56 +36,93 @@ function extractProperties( declaration : ClassDeclaration ) : ASTProperty[]{
             const baseSymbol = baseType.getSymbol();
             if (!baseSymbol) continue;
 
-            const declaration = baseSymbol.getDeclarations().find(d =>
-                d.getKindName() === "ClassDeclaration" || d.getKindName() === "InterfaceDeclaration"
-            ) as ClassDeclaration | InterfaceDeclaration | undefined;
+            const baseDecl = baseSymbol.getDeclarations()[0]; 
+            if (!baseDecl) continue;
 
-            if (!declaration) continue;
+            const kindName = baseDecl.getKindName();
+            console.log(`[getAncestorProperties] kind : ${kindName}`);
+            const inheritedProps : ASTProperty[] = [];
 
-            const inheritedProps =
-                declaration.getKindName() === "ClassDeclaration"
-                    ? (declaration as ClassDeclaration).getProperties()
-                    : (declaration as InterfaceDeclaration).getProperties();
+            switch(kindName){
 
-            inheritedProps.forEach(prop => {
-                const name = prop.getName();
-                if (!collectedProps.has(name)) {
-                    collectedProps.set(name, {
-                        name,
-                        type: prop.getType().getText(),
-                        hasQuestionToken: prop.hasQuestionToken(),
+                case "ClassDeclaration" : {
+                    baseDecl.asKindOrThrow(SyntaxKind.ClassDeclaration).getProperties().forEach(prop=> {
+                        inheritedProps.push({
+                            name : prop.getName(),
+                            type : prop.getType().getText(),
+                            hasQuestionToken : prop.hasQuestionToken()
+                        });
                     });
+                    break;
+                }
+
+                case "InterfaceDeclaration"  :{
+                    baseDecl.asKindOrThrow(SyntaxKind.InterfaceDeclaration).getProperties().forEach(prop=> {
+                        inheritedProps.push({
+                            name : prop.getName(),
+                            type : prop.getType().getText(),
+                            hasQuestionToken : prop.hasQuestionToken()
+                        });
+                    });
+
+                    break;
+                }
+
+                //MappedType 경우, 타입 스탠스폼을 통해 생성되므로, 별도의 작업이 필요.
+                case "MappedType" : {
+                    const checker = declaration.getProject().getTypeChecker();
+                    const extendsClause = declaration.getHeritageClauses().find(h=>h.getToken() === SyntaxKind.ExtendsKeyword);
+                    const baseTypeNode = extendsClause.getTypeNodes()[0];
+                    const baseType = checker.getTypeAtLocation(baseTypeNode);
+
+                    // 3. 상속한 타입의 프로퍼티 추출
+                    baseType.getProperties().forEach(prop => {
+                        const propType = prop.getTypeAtLocation(declaration);
+                      
+                        inheritedProps.push({
+                          name: prop.getName(),
+                          type: propType.getText(),
+                          hasQuestionToken : prop.hasFlags(ts.SymbolFlags.Optional),
+                        });
+                    });
+                    break;
+                }
+
+                case "TypeReference" : {
+
+                }
+
+                default : {
+                    console.warn(`[getAncestorProperties] not defined SyntaxKind`);
+                    continue;
+                }
+            }
+
+            inheritedProps.forEach(ast => {
+                if (!collectedProps.has(ast.name)) {
+                    collectedProps.set(ast.name, ast);
                 }
             });
         }
     }
 }
 
-export function ClassMigration(){
+export function transformToInterface(globPattern : string[],outDir : string ){
 
     const project = new Project({
         tsConfigFilePath : "tsconfig.json",
         // skipAddingFilesFromTsConfig : true,
         // skipFileDependencyResolution: true,
-        compilerOptions : {
-            outDir : "types",
-        }
     });
 
-    const sourceFiles = project.getSourceFiles(["src/**/*.response.ts" , "src/**/*dto.ts"]);
+    const sourceFiles = project.getSourceFiles(globPattern);
      
     for( const file of sourceFiles){
         console.log(`#processing : ${file.getFilePath()}`);
 
-        const fileName = file.getFilePath().split('/').slice(-1).join();
+        const fileName = file.getFilePath().split('/').slice(-1)[0];
 
-        const classDeclaration = file.getClass((declaration => {
-            const name = declaration.getName() ?? "";
-            if(!(name.includes(`Response`) || name.includes(`Dto`))){
-                return false;
-            }
-            return true;
-        }));
+        const classDeclaration = file.getClass(()=>true);
 
         if (!classDeclaration) {
             console.warn(`⚠️ No matching class in file: ${file.getBaseName()}`);
@@ -101,7 +139,7 @@ export function ClassMigration(){
 
         classDeclaration.getDecorators().forEach(d=>d.remove);
         
-        const outputFilePath = `types/${fileName}`;
+        const outputFilePath = `${outDir}/${fileName}`;
         const interfaceFile = project.createSourceFile(outputFilePath,"",{overwrite : true});
 
 
