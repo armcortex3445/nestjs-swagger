@@ -39,63 +39,33 @@ function extractProperties(declaration : ClassDeclaration ) : ASTProperty[]{
             const baseDecl = baseSymbol.getDeclarations()[0]; 
             if (!baseDecl) continue;
 
-            const kindName = baseDecl.getKindName();
-            console.log(`[getAncestorProperties] kind : ${kindName}`);
-            const inheritedProps : ASTProperty[] = [];
+            const kind = baseDecl.getKind();
+            console.log(`[getAncestorProperties] kind : ${baseDecl.getKindName()}`);
+            let inheritedProps : ASTProperty[] = [];
 
-            switch(kindName){
-
-                case "ClassDeclaration" : {
-                    baseDecl.asKindOrThrow(SyntaxKind.ClassDeclaration).getProperties().forEach(prop=> {
-                        inheritedProps.push({
-                            name : prop.getName(),
-                            type : prop.getType().getText(),
-                            hasQuestionToken : prop.hasQuestionToken()
-                        });
-                    });
-                    break;
-                }
-
-                case "InterfaceDeclaration"  :{
-                    baseDecl.asKindOrThrow(SyntaxKind.InterfaceDeclaration).getProperties().forEach(prop=> {
-                        inheritedProps.push({
-                            name : prop.getName(),
-                            type : prop.getType().getText(),
-                            hasQuestionToken : prop.hasQuestionToken()
-                        });
-                    });
-
-                    break;
-                }
-
-                //MappedType 경우, 타입 스탠스폼을 통해 생성되므로, 별도의 작업이 필요.
-                case "MappedType" : {
-                    const checker = declaration.getProject().getTypeChecker();
-                    const extendsClause = declaration.getHeritageClauses().find(h=>h.getToken() === SyntaxKind.ExtendsKeyword);
-                    const baseTypeNode = extendsClause.getTypeNodes()[0];
-                    const baseType = checker.getTypeAtLocation(baseTypeNode);
-
-                    // 3. 상속한 타입의 프로퍼티 추출
-                    baseType.getProperties().forEach(prop => {
-                        const propType = prop.getTypeAtLocation(declaration);
-                      
-                        inheritedProps.push({
-                          name: prop.getName(),
-                          type: propType.getText(),
-                          hasQuestionToken : prop.hasFlags(ts.SymbolFlags.Optional),
-                        });
-                    });
-                    break;
-                }
-
-                case "TypeReference" : {
-
-                }
-
-                default : {
-                    console.warn(`[getAncestorProperties] not defined SyntaxKind`);
-                    continue;
-                }
+            if(kind === SyntaxKind.ClassDeclaration || kind === SyntaxKind.InterfaceDeclaration){
+                const properties = baseDecl.getKind() === SyntaxKind.ClassDeclaration ?
+                baseDecl.asKindOrThrow(SyntaxKind.ClassDeclaration).getProperties() :
+                baseDecl.asKindOrThrow(SyntaxKind.InterfaceDeclaration).getProperties();
+        
+              inheritedProps = properties.map(prop => ({
+                name: prop.getName(),
+                type: prop.getType().getText(),
+                hasQuestionToken: prop.hasQuestionToken()
+              }));
+            }
+            // AST가 없는 MappedType이나 TypeReference에 경우, TypeChecker를 활용
+            else {
+                const checker = declaration.getProject().getTypeChecker(); 
+                const properties = baseType.getProperties();
+                inheritedProps = baseType.getProperties().map(prop => {
+                const propType = checker.getTypeOfSymbolAtLocation(prop, declaration); //const propType = prop.getTypeAtLocation(declaration); 동일한 방법
+                return {
+                    name: prop.getName(),
+                    type: propType.getText(),
+                    hasQuestionToken: prop.hasFlags(ts.SymbolFlags.Optional)
+                };
+                });
             }
 
             inheritedProps.forEach(ast => {
