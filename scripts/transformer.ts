@@ -4,77 +4,71 @@ interface ASTProperty{
     name: string; type: string; hasQuestionToken: boolean
 }
 
-function extractProperties(declaration : ClassDeclaration ) : ASTProperty[]{
+function getAllProperties(declaration : ClassDeclaration ) : ASTProperty[]{
 
 
     const collectedProps: Map<string, ASTProperty> = new Map();
 
-    getOwnProperties();
-    getAncestorProperties();
+    const type = declaration.getType();
+    const ownProps = type.getProperties();
+    ownProps.forEach(prop => {
+        collectedProps.set(prop.getName(), {
+            name: prop.getName(),
+            type: prop.getTypeAtLocation(declaration).getText(),
+            hasQuestionToken: prop.hasFlags(SymbolFlags.Optional),
+        });
+    });
 
     return [...collectedProps.values()];
+}
 
-    function getOwnProperties(){
-        const type = declaration.getType();
-        const ownProps = type.getProperties();
-        ownProps.forEach(prop => {
-            const valueLoc = prop.getValueDeclaration();
-            if(!valueLoc) return;
-            collectedProps.set(prop.getName(), {
+function getAncestorProperties(declaration : ClassDeclaration){
+    const baseTypes = declaration.getBaseTypes();
+    const collectedProps: Map<string, ASTProperty> = new Map();
+    
+    for (const baseType of baseTypes) {
+        const baseSymbol = baseType.getSymbol();
+        if (!baseSymbol) continue;
+
+        const baseDecl = baseSymbol.getDeclarations()[0]; 
+        if (!baseDecl) continue;
+
+        const kind = baseDecl.getKind();
+        console.log(`[getAncestorProperties] kind : ${baseDecl.getKindName()}`);
+        let inheritedProps : ASTProperty[] = [];
+
+        if(kind === SyntaxKind.ClassDeclaration || kind === SyntaxKind.InterfaceDeclaration){
+            const properties = baseDecl.getKind() === SyntaxKind.ClassDeclaration ?
+            baseDecl.asKindOrThrow(SyntaxKind.ClassDeclaration).getProperties() :
+            baseDecl.asKindOrThrow(SyntaxKind.InterfaceDeclaration).getProperties();
+    
+          inheritedProps = properties.map(prop => ({
+            name: prop.getName(),
+            type: prop.getType().getText(),
+            hasQuestionToken: prop.hasQuestionToken()
+          }));
+        }
+        // AST가 없는 MappedType이나 TypeReference에 경우, TypeChecker를 활용
+        else {
+            const checker = declaration.getProject().getTypeChecker(); 
+            inheritedProps = baseType.getProperties().map(prop => {
+            const propType = checker.getTypeOfSymbolAtLocation(prop, declaration); //const propType = prop.getTypeAtLocation(declaration); 동일한 방법
+            return {
                 name: prop.getName(),
-                type: prop.getTypeAtLocation(prop.getValueDeclarationOrThrow()).getText(),
-                hasQuestionToken: prop.hasFlags(SymbolFlags.Optional),
+                type: propType.getText(),
+                hasQuestionToken: prop.hasFlags(ts.SymbolFlags.Optional)
+            };
             });
+        }
+
+        inheritedProps.forEach(ast => {
+            if (!collectedProps.has(ast.name)) {
+                collectedProps.set(ast.name, ast);
+            }
         });
     }
 
-
-    function getAncestorProperties(){
-        const baseTypes = declaration.getBaseTypes();
-        
-        for (const baseType of baseTypes) {
-            const baseSymbol = baseType.getSymbol();
-            if (!baseSymbol) continue;
-
-            const baseDecl = baseSymbol.getDeclarations()[0]; 
-            if (!baseDecl) continue;
-
-            const kind = baseDecl.getKind();
-            console.log(`[getAncestorProperties] kind : ${baseDecl.getKindName()}`);
-            let inheritedProps : ASTProperty[] = [];
-
-            if(kind === SyntaxKind.ClassDeclaration || kind === SyntaxKind.InterfaceDeclaration){
-                const properties = baseDecl.getKind() === SyntaxKind.ClassDeclaration ?
-                baseDecl.asKindOrThrow(SyntaxKind.ClassDeclaration).getProperties() :
-                baseDecl.asKindOrThrow(SyntaxKind.InterfaceDeclaration).getProperties();
-        
-              inheritedProps = properties.map(prop => ({
-                name: prop.getName(),
-                type: prop.getType().getText(),
-                hasQuestionToken: prop.hasQuestionToken()
-              }));
-            }
-            // AST가 없는 MappedType이나 TypeReference에 경우, TypeChecker를 활용
-            else {
-                const checker = declaration.getProject().getTypeChecker(); 
-                const properties = baseType.getProperties();
-                inheritedProps = baseType.getProperties().map(prop => {
-                const propType = checker.getTypeOfSymbolAtLocation(prop, declaration); //const propType = prop.getTypeAtLocation(declaration); 동일한 방법
-                return {
-                    name: prop.getName(),
-                    type: propType.getText(),
-                    hasQuestionToken: prop.hasFlags(ts.SymbolFlags.Optional)
-                };
-                });
-            }
-
-            inheritedProps.forEach(ast => {
-                if (!collectedProps.has(ast.name)) {
-                    collectedProps.set(ast.name, ast);
-                }
-            });
-        }
-    }
+    return [...collectedProps.values()];
 }
 
 export function transformToInterface(globPattern : string[],outDir : string ){
@@ -105,7 +99,7 @@ export function transformToInterface(globPattern : string[],outDir : string ){
         const genericSuffix = typeParamTexts.length > 0 ? `<${typeParamTexts.join(", ")}>` : "";
 
 
-        const properties : ASTProperty[] = extractProperties(classDeclaration);
+        const properties : ASTProperty[] = getAllProperties(classDeclaration);
 
         classDeclaration.getDecorators().forEach(d=>d.remove);
         
