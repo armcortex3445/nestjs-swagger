@@ -109,7 +109,7 @@ function generateInterface(classDeclaration : ClassDeclaration, properties : AST
     
     const genericSuffix = typeParamTexts.length > 0 ? `<${typeParamTexts.join(", ")}>` : "";
     interfaceFile.addInterface({
-        name : className,
+        name : className!,
         isExported : true,
         typeParameters: typeParamTexts,
         properties : properties

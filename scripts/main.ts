@@ -7,7 +7,7 @@ import { transformToInterface } from "./transformer";
 function main() {
 
     const inputDir = "src";
-    const outDir = "types";
+    const outDir = "./scripts/types";
     const dtoGlob = ["*.response.ts" , "*.dto.ts"];
 
     //1. transform

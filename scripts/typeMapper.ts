@@ -1,6 +1,6 @@
 
 import path, { dirname, relative } from "path";
-import glob, { sync } from "glob";
+import  { sync } from "glob";
 import { Node,ImportTypeNode, InterfaceDeclaration, Project, PropertyDeclaration, SourceFile, StringLiteral, StructureKind, SyntaxKind, TypeNode } from "ts-morph";
 
 type ImportMap = Map<string,Set<string>>;
@@ -162,8 +162,8 @@ function findImportTypeReferences (file: SourceFile, filePath: string) {
     const importsToAdd: Record<string, Set<string>> = {};
 
 
-    const interfaceDecl = file.getInterfaces()[0];
-    const interfaceName = interfaceDecl.getType().getSymbol().getName();
+    const interfaceDecl = file.getInterfaces()[0]!;
+    const interfaceName = interfaceDecl.getType().getSymbol()!.getName();
     
     console.log(`[findImportTypeReferences] Entry : ${interfaceName}\n`+ `filePath : ${file.getFilePath()}`);
     file.forEachDescendant((node) => {
@@ -194,7 +194,7 @@ function findImportTypeReferences (file: SourceFile, filePath: string) {
         if (!importsToAdd[relativePath]) {
           importsToAdd[relativePath] = new Set();
         }
-        importsToAdd[relativePath].add(typeName);
+        importsToAdd[relativePath]!.add(typeName);
 
         console.log(`Add { ${relativePath} , ${typeName} } `);
       }
