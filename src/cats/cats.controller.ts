@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Post } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -25,13 +25,25 @@ export class CatsController {
  * @throws {400} Bad Request.
  */
   @Post()
-  async create(@Body() createCatDto: CreateCatDto): Promise<Cat> {
-    return this.catsService.create(createCatDto);
+  async create(@Body() createCatDto: CreateCatDto) : Promise<ShowCatResponse>{
+    const cat= this.catsService.create(createCatDto);
+
+    return new ShowCatResponse(cat);
   }
 
+  /**
+ * find a new cat
+ *
+ * @remarks find a cat by id
+ *
+ * @throws {500} Something went wrong.
+ * @throws {400} Bad Request.
+ */
   @Get(':id')
   findOne(@Param('id') id: string): ShowCatResponse {
     const cat  =  this.catsService.findOne(+id);
+
+    if(!cat) throw new BadRequestException();
 
     return new ShowCatResponse(cat);
 

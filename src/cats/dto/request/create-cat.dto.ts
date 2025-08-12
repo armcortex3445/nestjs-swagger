@@ -1,12 +1,15 @@
-import { IsInt, IsString } from 'class-validator';
+import { IsIn, IsInt, IsString } from 'class-validator';
+import { CAT_BREED, CatBreedValue } from '../../enum';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateCatDto {
   @IsString()
-  readonly name: string;
+  readonly name!: string;
 
   @IsInt()
-  readonly age: number;
+  readonly age!: number;
 
-  @IsString()
-  readonly breed: string;
+  @ApiProperty({ enum : Object.values(CAT_BREED) })
+  @IsIn([...Object.values(CAT_BREED)])
+  readonly breed!: CatBreedValue;
 }

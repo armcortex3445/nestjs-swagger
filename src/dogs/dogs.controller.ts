@@ -1,13 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Put, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Put, HttpException, HttpStatus, BadRequestException } from '@nestjs/common';
 import { DogsService } from './dogs.service';
 import { CreateDogDto } from './dto/request/create-dog.dto';
 import { UpdateDogDto } from './dto/request/update-dog.dto';
 import { ApiBasicAuth, ApiBody, ApiCreatedResponse, ApiExtension, ApiExtraModels, ApiHeader, ApiOkResponse, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
-import { FindDogResponse } from './dto/request/find-dog.dto';
 import { Dog } from './entities/dog.entity';
 import { PaginatedResponse } from '../common/dto/paginated.response';
 import { resourceLimits } from 'worker_threads';
 import { ApiPaginatedResponse } from '../common/decorator/swagger/apiPaginatedResponse';
+import { ShowDogResponse } from './dto/response/showDog.response';
+import { isEmpty } from 'class-validator';
 
 @ApiBasicAuth()
 @Controller('dogs')
@@ -23,22 +24,24 @@ export class DogsController {
  * @throws {400} Bad Request.
  */
   @ApiExtension('x-foo', { hello: 'world' })
-  @ApiPaginatedResponse(Dog)
+  @ApiPaginatedResponse(ShowDogResponse)
   @Get()
-  findAll() : PaginatedResponse<Dog> {
+  findAll() : PaginatedResponse<ShowDogResponse> {
     const data =  this.dogsService.findAll();
 
-    return {
-      total : data.length,
-      offset : 0,
-      limit : 0, 
-      data,
-    }
+    return new PaginatedResponse(data.map(dog=>new ShowDogResponse(dog)));
   }
 
+  
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.dogsService.findOne(+id);
+  const dog =  this.dogsService.findOne(+id);
+
+  if(!dog){
+    throw new BadRequestException();
+  }
+
+   return new ShowDogResponse(dog);
   }
 
   @ApiHeader({
@@ -50,22 +53,24 @@ export class DogsController {
   @ApiCreatedResponse({ description : 'create dog'})
   @Post()
   create(@Body() createDogDto: CreateDogDto) {
-    return this.dogsService.create(createDogDto);
+    const dog = this.dogsService.create(createDogDto);
+
+    return new ShowDogResponse(dog);
   }
 
   @Put(':id')
   @ApiBody({type : [CreateDogDto]})
   update(@Param('id') id: string, @Body() updateDogDto: UpdateDogDto) {
-    const target = this.findOne(id);
+    const target = this.dogsService.findOne(+id);
     if(target === undefined){
       throw new HttpException('no one',HttpStatus.BAD_REQUEST);
     }
 
-    return this.dogsService.update(target, updateDogDto);
+    this.dogsService.update(target, updateDogDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.dogsService.remove(+id);
+    this.dogsService.remove(+id);
   }
 }

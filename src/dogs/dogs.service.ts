@@ -5,13 +5,11 @@ import { Dog } from './entities/dog.entity';
 
 @Injectable()
 export class DogsService {
-
-  private id = 0;
   private repo : Dog[] = [];
 
   create(createDogDto: CreateDogDto) {
     const { name , age , breed } = createDogDto;
-    const newDog = new Dog( this.id++ , name,age, breed);
+    const newDog = new Dog( name,age, breed);
     this.repo.push(newDog);
 
     return newDog;

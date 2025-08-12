@@ -5,18 +5,10 @@ import { INestApplication, Options, ValidationPipe } from '@nestjs/common';
 import { CatsModule } from './cats/cats.module';
 import { DogsModule } from './dogs/dogs.module';
 import { ShowCatResponse } from './cats/dto/response/showCat.response';
+import { ShowDogResponse } from './dogs/dto/response/showDog.response';
+import { ShowHumanResponse } from './humans/dto/response/showHuman.response';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
 
-  configPipe(app);
-
-  attachSwagger(app);
-
-  await app.listen(3000);
-  console.log(`Application is running on: ${await app.getUrl()}`);
-}
-bootstrap();
 
 function attachSwagger(app : INestApplication<any>){
 
@@ -26,8 +18,13 @@ function attachSwagger(app : INestApplication<any>){
   .setVersion('1.0')
   .build();
 
+  const dogDtoModels  = [ShowDogResponse];
+  const catDtoModels = [ShowCatResponse];
+  const humanDtoModels = [ShowHumanResponse]
+
   const document = SwaggerModule.createDocument(app,rootOptions,{
-    include : []
+    include : [],
+    extraModels : [...dogDtoModels,...catDtoModels,...humanDtoModels],
   });
 
 
@@ -42,7 +39,7 @@ function attachSwagger(app : INestApplication<any>){
   .build();
  const catDocumentFactory = () => SwaggerModule.createDocument(app,catOptions,{
   include: [CatsModule],
-  extraModels : [ShowCatResponse],
+  extraModels : catDtoModels,
  });
 
  const dogOptions = new DocumentBuilder()
@@ -54,7 +51,8 @@ function attachSwagger(app : INestApplication<any>){
  .addBasicAuth()
  .build();
  const dogDocumentFactory = () => SwaggerModule.createDocument(app, dogOptions,{
-  include: [ DogsModule]
+  include: [ DogsModule],
+  extraModels : dogDtoModels
  });
 
 
@@ -97,3 +95,15 @@ function configPipe(app : INestApplication<any>){
     transform : true,
   }));
 }
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  configPipe(app);
+
+  attachSwagger(app);
+
+  await app.listen(3000);
+  console.log(`Application is running on: ${await app.getUrl()}`);
+}
+bootstrap();

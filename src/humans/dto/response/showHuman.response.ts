@@ -1,19 +1,24 @@
-import { Project } from "ts-morph";
 import { ShowCatResponse } from "../../../cats/dto/response/showCat.response";
 import { PaginatedResponse } from "../../../common/dto/paginated.response";
 import { ShowDogResponse } from "../../../dogs/dto/response/showDog.response";
+import { Human } from "../../entities/human.entity";
 import { Country, GENDER } from "../../enum";
+import { ApiProperty, PickType } from "@nestjs/swagger";
 
-export class ShowHumanResponse {
-    readonly stringType : string;
-    readonly numberType : number;
-    readonly genericUnionType : PaginatedResponse<ShowCatResponse|ShowDogResponse>;
-    readonly intersectionType : ShowCatResponse & ShowDogResponse;
-    readonly arrayPickType : Array<Pick<ShowDogResponse,'name'>>;
-    readonly recursiveType? : ShowHumanResponse;
-    arrayUnionType : Array<string | number>;
-    externalType : Project;
-    unionStringType : 'A'|'B'|'C';
-    enumType : GENDER;
-    constObjectType : Country
+export class ShowHumanResponse extends PickType(Human,['id','age','name']) {
+    readonly id : number;
+    readonly name : string;
+    readonly age : number;
+    
+    @ApiProperty({type : ()=>PaginatedResponse<ShowCatResponse|ShowDogResponse>})
+    readonly pets : PaginatedResponse<ShowCatResponse|ShowDogResponse>;
+
+    constructor(human : Human){
+        super();
+        this.id = human.id;
+        this.age = human.age;
+        this.name = human.name;
+        this.pets = new PaginatedResponse(human.pets);
+
+    }
 }
