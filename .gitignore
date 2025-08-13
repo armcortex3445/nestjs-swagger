@@ -25,3 +25,4 @@ npm-debug.log
 
 # class-transformer logger
 scripts/**/*.txt
+scripts/types/
