@@ -22,7 +22,7 @@
 ## Quick Start 
 
 ```
-npx ts-node scrips/main.ts >> scripts/result.txt;
+npx ts-node scripts/main.ts >> scripts/result.txt
 ```
 
 
