@@ -117,7 +117,71 @@
 
 ### Before
 
-- ts-morph 사용시 러닝커브, 유지보수 그리고 작업 증가 문제가 있음
+- `ts-morph` 사용시 러닝커브, 유지보수 그리고 작업 증가 문제가 있음
 
 ### Bridge
 - swagger Open API를 사용하여 API Generator를 만들기 위해 프로토타이핑 수정
+- swagger 기반 API Code generator `openapi-typescript` 와 `swagger-typescript-api`을 사용하여 DTO 타입 선언 파일 생성
+
+### After
+- Swagger 기반 API generator 효용성 확인
+    - `ts-morph` 간편하고 빠르게 DTO 타입 선언 파일 생성을 확인함
+    - 패키지 배포 없이 swagger API DOC만 관리하여 DTO 타입 선언 파일 생성할 수 있음을 확인
+- `openapi-typescript` 사용
+    ```
+    npx openapi-typescript http://localhost:3000/api/swagger.json -o api-generator/openapi-ts/types.ts --enum --export-type --path-params-as-types  --root-types --root-types-no-schema-prefix --make-paths-enum --generate-path-params
+    ```
+    - [옵션 정보](https://openapi-ts.dev/cli#flags)
+- `swagger-typescript-api`를 사용
+    ```
+    npx swagger-typescript-api generate -p http:localhost:3000/api/swagger.json -r -o api-generator/swagger-typescript-api/output --modular -d --extract-request-body --extract-response-body --extract-response-error --axios
+    ```
+    - [옵션 정보](https://www.npmjs.com/package/swagger-typescript-api/v/13.0.28)
+
+## 프로토타이핑 적용4
+
+### Before
+- `openapi-typescript` 와 `swagger-typescript-api` 중 어느것이 문제 해결에 적합한 지 선택 필요
+- 문제 정의 : 
+    - Front-end 프로젝트
+        - next.js 프레임워크 프로젝트
+        - fetch API를 사용
+        - 이전 코드 기반으로 DTO 타입이 프로젝트내에 정의됨
+        - 프로젝트에 필요한 정보
+            - Request/ Response DTO 타입
+            - api route
+            - Header 타입
+    - backend-tool 프로젝트
+        - node.js 프로젝트
+        - axios API를 사용
+        - 이전 코드 기반으로 DTO 타입이 프로젝트내에 정의됨
+        - 프로젝트에 필요한 정보
+            - Request/ Response DTO 타입
+            - api route
+            - Header 타입
+
+
+### Bridge
+- 라이브러리 평가
+
+|항목| openapi-typescript | swagger-typescript-api|
+|----|--------------------|-----------------------|
+|안정성| 5(여전히 버그 수정이 빈번) | 6 (기능 버그수정 거의 없음. 안하는 걸수도?)|
+|유지보수| 7(빈번하게 진행) | 4(의존성 문제만 오토봇이 자동화. 유지보수 안하는 거같음)|
+|신규유입| 7(신규 유입 증가 및 유치 계속함)| 4(안하는 거 같음)|
+|다양한 예제|6(다양한 기능에 대한 예제존재) | 5(schema 변환 결과 예제 코드만 존재)|
+|상세한 설명|7(공식문서가 잘되어있고, 링크참조도 잘되어있음) | 5(공식문서에 설명 부실, 예제 링크만 놓임. 과거 상세 문서 삭제됨)|
+|클라이언트 코드 생성|8(웹 프론트 프레임워크에 대한 다양한 코드 생성 가능하고 관련 라이브러리 존재) | 6(fetch,axios 등)
+|호환성(axios,fetch...)| 6(fetch,axios,jquery 등 대부분 호환)| 4(fetch,axios 에만 가능한듯)|
+|가독성| 5(DTO 타입이 components 인터페이스 묶여있고, 프로퍼티 보기가 힘듬. 다만 `type`키워드 변환 옵션 등을 사용하여 해결가능) | 7(DTO별로 타입 선언됨)  
+|옵션 유용성| 7(DTO 타입 생성에 관한 옵션이 다양함) | 5(DTO 타입 생성 옵션은 부족) |
+|이식성| 6(DTO 타입 코드 생성 ,연계 라이브러리를 통해 API 클라이언트 코드 생성 등 인터페이스 로직 적용 쉬움) | 6(DTO 코드 생성, Axios 클라이언트 코드 생성 인터페이스 로직 적용 쉬움) |
+|확장성| 8(Open APi doc을 활용한 다양한 라이브러리와 연계가능) | 4(해당 라이브러이와 연계가능한 것을 공식문서에서 찾지못함)
+|결과물 검증| 7(swagger에 담긴 path,api operator, dto type 모두 검증 가능) | 5(swagger에 담긴 dto type 검증 가능)
+|사용경험| 보류 | 보류 |
+|합계|  79  |  61 |
+
+
+### After
+- `openapi-typescript`을 먼저 프로젝트에 적용할 것을 결정
+- 
